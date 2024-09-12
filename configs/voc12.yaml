@@ -11,6 +11,20 @@ wsss_dataset:
     fg_path: # None
     split:
         train: train_aug
+        val: val
+        test: test
+
+seg_dataset:
+    name: vocseg
+    root: /data/VOCdevkit
+#    LABELS: ./data/datasets/voc12/labels.txt
+    n_classes: 21
+    ignore_label: 255
+#    SCALES: [0.5, 0.75, 1.0, 1.25, 1.5]
+    split:
+        train: train_aug
+        val: val
+        test: test
 
 dataloader:
     num_workers: 4
