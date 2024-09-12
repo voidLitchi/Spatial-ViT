@@ -1,0 +1,63 @@
+exp:
+    id: base_voc12_p1
+    data_dir: /data/yuzhi/Spatial-ViT-main
+
+wsss_dataset:
+    name: vocwsss
+    root: /data/VOCdevkit
+    n_classes: 21
+    ignore_label: 255
+    target_size: 448
+    fg_path: # None
+    split:
+        train: train_aug
+
+dataloader:
+    num_workers: 4
+
+image:
+    mean:
+        R: 0.485
+        G: 0.456
+        B: 0.406
+    std:
+        R: 0.229
+        G: 0.224
+        B: 0.225
+    size:
+        train: 448
+        test: 448
+
+model:
+    backbone: deit_base_patch16_224
+    pretrained: True
+    init_momentum: 0.9
+
+solver:
+    batch_size:
+        train: 8
+        test: 1
+    world_size: 2
+    iter_max: 20000
+    iter_eval: 5000
+    iter_warmup: 1500
+    lr_warmup: 1e-6
+    lr: 6e-5
+
+#    MOMENTUM: 0.9
+    optimizer: PolyWarmupAdamW
+    adam_betas: [0.9, 0.999]
+    poly_power: 0.9
+    weight_decay: 1e-2
+
+logger:
+    iter_log: 10
+    iter_print: 500
+
+#CRF:
+#    ITER_MAX: 10
+#    POS_W: 3
+#    POS_XY_STD: 1
+#    BI_W: 4
+#    BI_XY_STD: 67
+#    BI_RGB_STD: 3
