@@ -13,6 +13,7 @@ os.environ['MASTER_PORT'] = '5678'
 
 
 # os.environ["TORCH_DISTRIBUTED_DEBUG"] = 'DETAIL'
+# os.environ["NCCL_DEBUG"] = 'INFO'
 
 
 @click.group()

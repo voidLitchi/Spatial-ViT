@@ -71,3 +71,12 @@ class RebuildMultiScaledCAM(object):
 
         return cam_sum / cam_cnt
 
+
+class get_cam(object):
+    def __init__(self, model, n_scales=3):
+        self.model = model
+        assert n_scales in [1, 3, 5, 7]
+        self.n_scales = n_scales
+
+    def __call__(self, image):
+        raise NotImplementedError()

@@ -1,4 +1,6 @@
+import sys
 import os
+import time
 import numpy as np
 
 import torch
@@ -27,24 +29,30 @@ def train_worker(rank, world_size, cfg):
         os.makedirs(log_dir, exist_ok=True)
         writer = SummaryWriter(log_dir=log_dir)
 
-    train_dataset = get_dataset(cfg.wsss_dataset.name)(
-        root=cfg.wsss_dataset.root,
+    train_dataset = get_dataset(cfg.dataset_wsss.name)(
+        root=cfg.dataset_wsss.root,
         data_dir=cfg.exp.data_dir,
-        split=cfg.wsss_dataset.split.train,
+        split=cfg.dataset_wsss.split.train,
         mean_rgb=(cfg.image.mean.R, cfg.image.mean.G, cfg.image.mean.B),
         std_rgb=(cfg.image.std.R, cfg.image.std.G, cfg.image.std.B),
         target_size=cfg.image.size.train,
         augmentation=True,
-        fg_path=cfg.wsss_dataset.fg_path,
+        fg_path=cfg.dataset_wsss.fg_path,
     )
 
-    train_sampler = DistributedSampler(train_dataset, shuffle=True, rank=rank, num_replicas=world_size)
+    train_sampler = DistributedSampler(
+        train_dataset,
+        shuffle=True,
+        rank=rank,
+        num_replicas=world_size
+    )
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset,
         batch_size=cfg.solver.batch_size.train,
         num_workers=cfg.dataloader.num_workers,
         # shuffle=True,  # Since we use the sampler, we should set 'shuffle' in sampler
-        pin_memory=False,
+        pin_memory=True,  # CHANGE: to True
+        persistent_workers=True,  # CHANGE: add
         drop_last=True,
         sampler=train_sampler,
         prefetch_factor=4
@@ -52,7 +60,7 @@ def train_worker(rank, world_size, cfg):
 
     model = get_model(
         backbone=cfg.model.backbone,
-        num_classes=cfg.wsss_dataset.n_classes,
+        num_classes=cfg.dataset_wsss.n_classes,
         pretrained=cfg.model.pretrained,
         init_momentum=cfg.model.init_momentum,
     )
@@ -101,6 +109,7 @@ def train_worker(rank, world_size, cfg):
     train_loader_iter = iter(train_loader)
 
     model.train()
+    time_start_train = time.perf_counter()
     for n_iter in range(cfg.solver.iter_max):
         optimizer.zero_grad()
 
@@ -135,7 +144,9 @@ def train_worker(rank, world_size, cfg):
 
         # 打印进度
         if rank == 0 and (n_iter + 1) % cfg.logger.iter_print == 0:
-            print(f'iter {n_iter + 1} of {cfg.solver.iter_max} has finished.')
+            print(f'iter {n_iter + 1} of {cfg.solver.iter_max} has finished \
+                in {time.perf_counter()-time_start_train} seconds')
+            sys.stdout.flush()
 
         # 记录损失
         if rank == 0 and (n_iter + 1) % cfg.logger.iter_log == 0:
